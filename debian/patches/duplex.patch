@@ -1,0 +1,112 @@
+diff -Nur -x '*.orig' -x '*~' pxljr-1.1/i_job_header.c pxljr-1.1.new/i_job_header.c
+--- pxljr-1.1/i_job_header.c	2006-12-31 21:26:41.000000000 +0100
++++ pxljr-1.1.new/i_job_header.c	2008-09-23 22:35:57.000000000 +0200
+@@ -67,7 +67,16 @@
+     }
+ 
+   ts += sprintf(ts, "@PJL SET COPIES=1\x00a");
+-  ts += sprintf(ts, "@PJL SET DUPLEX=OFF\x00d\x00a"); /* this is broken in HPIJS */
++  if (job_info->duplex) {
++    ts += sprintf(ts, "@PJL SET DUPLEX=ON\x00d\x00a");
++    if (job_info->tumble) {
++      ts += sprintf(ts, "@PJL SET BINDING=SHORTEDGE\x00d\x00a");
++    } else {
++      ts += sprintf(ts, "@PJL SET BINDING=LONGEDGE\x00d\x00a");
++    }
++  } else {
++    ts += sprintf(ts, "@PJL SET DUPLEX=OFF\x00d\x00a");
++  }
+   ts += sprintf(ts, "@PJL SET RESOLUTION=600\x00a");
+   ts += sprintf(ts, "@PJL SET TIMEOUT=90\x00a");
+   ts += sprintf(ts, "@PJL ENTER LANGUAGE=PCLXL\x00a");
+diff -Nur -x '*.orig' -x '*~' pxljr-1.1/i_job_info.h pxljr-1.1.new/i_job_info.h
+--- pxljr-1.1/i_job_info.h	2006-12-31 21:31:33.000000000 +0100
++++ pxljr-1.1.new/i_job_info.h	2008-09-23 22:35:57.000000000 +0200
+@@ -50,6 +50,8 @@
+   int pixel_v;
+   int papertype;
+   int copies;
++  int duplex;
++  int tumble;
+   struct jpeg_compress_struct *cinfo;
+   struct jpeg_error_mgr *jerr;
+   unsigned char *compressedbuffer;
+diff -Nur -x '*.orig' -x '*~' pxljr-1.1/i_main.c pxljr-1.1.new/i_main.c
+--- pxljr-1.1/i_main.c	2006-12-31 21:25:36.000000000 +0100
++++ pxljr-1.1.new/i_main.c	2008-09-23 22:35:57.000000000 +0200
+@@ -87,7 +87,7 @@
+ 		 char *val_buf,
+ 		 int val_size)
+ {
+-  const char *param_list = "OutputFile,OutputFD,DeviceManufacturer,DeviceModel,PageImageFormat,Dpi,Width,Height,BitsPerSample,ByteSex,ColorSpace,NumChan,PaperSize,PrintableArea,PrintableTopLeft,TopLeft,Quality,Quality:Quality,PaperType,Copies";
++  const char *param_list = "OutputFile,OutputFD,DeviceManufacturer,DeviceModel,PageImageFormat,Dpi,Width,Height,BitsPerSample,ByteSex,ColorSpace,NumChan,PaperSize,PrintableArea,PrintableTopLeft,TopLeft,PS:Duplex,PS:Tumble,Quality,Quality:Quality,PaperType,Copies";
+   int size = strlen (param_list);
+ 
+   if (size > val_size)
+@@ -116,6 +116,10 @@
+     val = "hp color LaserJet 3500,hp color LaserJet 3550";
+   else if (!strcmp (key, "PageImageFormat"))
+     val = "Raster";
++  else if (!strcmp (key, "PS:Duplex"))
++    val = "true,false";
++  else if (!strcmp (key, "PS:Tumble"))
++    val = "true,false";
+ 
+   if (val == NULL)
+       return IJS_EUNKPARAM;
+@@ -294,6 +298,10 @@
+     val = "Raster";
+   else if (!strcmp (key, "Dpi"))
+     val = "600x600";
++  else if (!strcmp (key, "PS:Duplex"))
++    val = "false";
++  else if (!strcmp (key, "PS:Tumble"))
++    val = "false";
+ 
+   if (val == NULL)
+       return IJS_EUNKPARAM;
+@@ -539,7 +547,43 @@
+ 	}
+     }
+ 
+-  /* Copies */
++  /* Duplex */
++  s = find_param(pl, "PS:Duplex");
++  if (s == NULL)
++    {
++      fprintf(stderr, "Duplex not set, using default Off (0)\n");
++      job_info->duplex = 0;
++    }
++  else 
++    if (strncmp(s, "true", 4) == 0)
++      job_info->duplex = 1;
++    else if (strncmp(s, "false", 5) == 0)
++      job_info->duplex = 0;
++    else
++      {
++        fprintf(stderr, "Unknown Duplex value %s, aborting!\n", s);
++        return 1;
++      }
++
++  /* Tumble */
++  s = find_param(pl, "PS:Tumble");
++  if (s == NULL)
++    {
++      fprintf(stderr, "Tumble not set, using default Off (0)\n");
++      job_info->tumble = 0;
++    }
++  else 
++    if (strncmp(s, "true", 4) == 0)
++      job_info->tumble = 1;
++    else if (strncmp(s, "false", 5) == 0)
++      job_info->tumble = 0;
++    else
++      {
++        fprintf(stderr, "Unknown Tumble value %s, aborting!\n", s);
++        return 1;
++      }
++
++  /* Quality */
+   s = find_param(pl, "Quality:Quality");
+   if (s == NULL)
+     {

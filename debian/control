@@ -1,0 +1,18 @@
+Source: pxljr
+Section: text
+Priority: optional
+Maintainer: Till Kamppeter <till.kamppeter@gmail.com>
+Build-Depends: debhelper (>= 5.0.0), cdbs, groff, dpatch, autoconf, automake, libtool, libijs-dev, libjpeg62-dev
+Standards-Version: 3.7.2
+
+Package: pxljr
+Architecture: any
+Depends: ${shlibs:Depends}, foomatic-filters (>= 4.0.0~bzr156), cups, cups-client
+Description: Driver for HP's Color LaserJet 35xx/36xx color laser printers
+ HP's Color LaserJets 35xx and 36xx are supported by HP's HPIJS driver
+ (part of HPLIP), but HPIJS supports only the lowest quality level of
+ the three which are available under Windows. This driver which is not
+ developed at HP but by a independent developer supports all modes and
+ so provided the highest printout quality for these printers.
+ .
+ Home Page: http://sourceforge.net/projects/hp-pxl-jetready/

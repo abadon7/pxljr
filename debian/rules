@@ -1,0 +1,87 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+include /usr/share/cdbs/1/rules/simple-patchsys.mk
+
+CFLAGS = -Wall -g
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	INSTALL_PROGRAM += -s
+endif
+
+patch: patch-stamp
+patch-stamp:
+	dh_testdir
+	dpatch apply-all
+	touch patch-stamp
+
+configure: configure-stamp
+configure-stamp: patch
+	dh_testdir
+	touch configure-stamp
+	./autogen.sh --prefix=/usr
+
+build: build-stamp
+build-stamp: configure-stamp 
+	dh_testdir
+	$(MAKE) CFLAGS="$(CFLAGS)"
+	touch build-stamp
+
+unpatch:
+	dh_testdir
+	dpatch deapply-all
+	rm -rf debian/patched
+
+clean:: unpatch
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp patch-stamp
+	-$(MAKE) clean
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	# "make install" installs a lot of unnessecary stuff and it does
+	# not install th PPD file(s), so we install manually
+	#$(MAKE) DESTDIR=$(CURDIR)/debian/pxljr install
+	mkdir -p $(CURDIR)/debian/pxljr/usr/bin
+	install -m 755 ijs_pxljr $(CURDIR)/debian/pxljr/usr/bin/
+	mkdir -p $(CURDIR)/debian/pxljr/usr/share/ppd/pxljr
+	install -m 644 *.ppd $(CURDIR)/debian/pxljr/usr/share/ppd/pxljr
+	# Generate PPD files for the HP LaserJet 3500 and 3600
+	perl -p -e 's:3550(?!\&quot):3500:g' $(CURDIR)/debian/pxljr/usr/share/ppd/pxljr/HP-Color_LaserJet_3550-pxljr.ppd > $(CURDIR)/debian/pxljr/usr/share/ppd/pxljr/HP-Color_LaserJet_3500-pxljr.ppd
+	perl -p -e 's:3550(?!\&quot):3600:g' $(CURDIR)/debian/pxljr/usr/share/ppd/pxljr/HP-Color_LaserJet_3550-pxljr.ppd > $(CURDIR)/debian/pxljr/usr/share/ppd/pxljr/HP-Color_LaserJet_3600-pxljr.ppd
+	# Allow also PDF as input data format
+	perl -p -i -e 's,^\*cupsFilter:\s*\"application/vnd.cups-postscript\s+0\s+foomatic-rip\",*cupsFilter: "application/vnd.cups-postscript 100 foomatic-rip"\n*cupsFilter: "application/vnd.cups-pdf 0 foomatic-rip",' $(CURDIR)/debian/pxljr/usr/share/ppd/pxljr/*.ppd
+	# Install Apport hook
+	install -D -m 644 debian/local/apport-hook.py $(CURDIR)/debian/pxljr/usr/share/apport/package-hooks/source_pxljr.py
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_installdocs
+	dh_installexamples
+	dh_installman
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure
