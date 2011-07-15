@@ -225,7 +225,7 @@ rgb_jr_start (j_compress_ptr cinfo)
 
   for (i = 0; i <= MAXJSAMPLE; i++) {
     rgb_ycc_tab[i+JR_HALF_OFF] = FIX(0.50000) * i + ONE_HALF;
-    rgb_ycc_tab[i+JR_MINUSHALF_OFF] = (-FIX(0.50000)) * i + CBCR_OFFSET ; /* -1 ? */
+    rgb_ycc_tab[i+JR_MINUSHALF_OFF] = (-FIX(0.50000)) * i + CBCR_OFFSET - 1;
   }
 }
 

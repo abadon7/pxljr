@@ -67,7 +67,16 @@ int i_job_header(i_job_info_t *job_info)
     }
 
   ts += sprintf(ts, "@PJL SET COPIES=1\x00a");
-  ts += sprintf(ts, "@PJL SET DUPLEX=OFF\x00d\x00a"); /* this is broken in HPIJS */
+  if (job_info->duplex) {
+    ts += sprintf(ts, "@PJL SET DUPLEX=ON\x00d\x00a");
+    if (job_info->tumble) {
+      ts += sprintf(ts, "@PJL SET BINDING=SHORTEDGE\x00d\x00a");
+    } else {
+      ts += sprintf(ts, "@PJL SET BINDING=LONGEDGE\x00d\x00a");
+    }
+  } else {
+    ts += sprintf(ts, "@PJL SET DUPLEX=OFF\x00d\x00a");
+  }
   ts += sprintf(ts, "@PJL SET RESOLUTION=600\x00a");
   ts += sprintf(ts, "@PJL SET TIMEOUT=90\x00a");
   ts += sprintf(ts, "@PJL ENTER LANGUAGE=PCLXL\x00a");

@@ -50,6 +50,8 @@ struct _i_job_info {
   int pixel_v;
   int papertype;
   int copies;
+  int duplex;
+  int tumble;
   struct jpeg_compress_struct *cinfo;
   struct jpeg_error_mgr *jerr;
   unsigned char *compressedbuffer;

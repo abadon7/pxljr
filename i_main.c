@@ -87,7 +87,7 @@ i_list_cb (void *list_cb_data,
 		 char *val_buf,
 		 int val_size)
 {
-  const char *param_list = "OutputFile,OutputFD,DeviceManufacturer,DeviceModel,PageImageFormat,Dpi,Width,Height,BitsPerSample,ByteSex,ColorSpace,NumChan,PaperSize,PrintableArea,PrintableTopLeft,TopLeft,Quality,Quality:Quality,PaperType,Copies";
+  const char *param_list = "OutputFile,OutputFD,DeviceManufacturer,DeviceModel,PageImageFormat,Dpi,Width,Height,BitsPerSample,ByteSex,ColorSpace,NumChan,PaperSize,PrintableArea,PrintableTopLeft,TopLeft,PS:Duplex,PS:Tumble,Quality,Quality:Quality,PaperType,Copies";
   int size = strlen (param_list);
 
   if (size > val_size)
@@ -116,6 +116,10 @@ i_enum_cb (void *enum_cb_data,
     val = "hp color LaserJet 3500,hp color LaserJet 3550";
   else if (!strcmp (key, "PageImageFormat"))
     val = "Raster";
+  else if (!strcmp (key, "PS:Duplex"))
+    val = "true,false";
+  else if (!strcmp (key, "PS:Tumble"))
+    val = "true,false";
 
   if (val == NULL)
       return IJS_EUNKPARAM;
@@ -294,6 +298,10 @@ i_get_cb (void *get_cb_data,
     val = "Raster";
   else if (!strcmp (key, "Dpi"))
     val = "600x600";
+  else if (!strcmp (key, "PS:Duplex"))
+    val = "false";
+  else if (!strcmp (key, "PS:Tumble"))
+    val = "false";
 
   if (val == NULL)
       return IJS_EUNKPARAM;
@@ -539,7 +547,43 @@ pl_to_jobinfo (ParamList *pl, IjsPageHeader ph, i_job_info_t *job_info)
 	}
     }
 
-  /* Copies */
+  /* Duplex */
+  s = find_param(pl, "PS:Duplex");
+  if (s == NULL)
+    {
+      fprintf(stderr, "Duplex not set, using default Off (0)\n");
+      job_info->duplex = 0;
+    }
+  else 
+    if (strncmp(s, "true", 4) == 0)
+      job_info->duplex = 1;
+    else if (strncmp(s, "false", 5) == 0)
+      job_info->duplex = 0;
+    else
+      {
+        fprintf(stderr, "Unknown Duplex value %s, aborting!\n", s);
+        return 1;
+      }
+
+  /* Tumble */
+  s = find_param(pl, "PS:Tumble");
+  if (s == NULL)
+    {
+      fprintf(stderr, "Tumble not set, using default Off (0)\n");
+      job_info->tumble = 0;
+    }
+  else 
+    if (strncmp(s, "true", 4) == 0)
+      job_info->tumble = 1;
+    else if (strncmp(s, "false", 5) == 0)
+      job_info->tumble = 0;
+    else
+      {
+        fprintf(stderr, "Unknown Tumble value %s, aborting!\n", s);
+        return 1;
+      }
+
+  /* Quality */
   s = find_param(pl, "Quality:Quality");
   if (s == NULL)
     {
