@@ -1,3 +1,9 @@
+pxljr (1.1-1) unstable; urgency=low
+
+  * Initial release in Debian.
+
+ -- Henry Velez <henry.debian@gmail.com>  Wed, 20 Jul 2011 21:11:14 -0500
+
 pxljr (1.1-0ubuntu7) karmic; urgency=low
 
   * debian/pxljr.postinst: Fixed "lpstat -r" check for the
