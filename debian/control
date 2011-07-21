@@ -1,7 +1,7 @@
 Source: pxljr
 Section: text
 Priority: optional
-Maintainer: Till Kamppeter <till.kamppeter@gmail.com>
+Maintainer: Henry Velez <henry.debian@gmail.com>
 Build-Depends: debhelper (>= 5.0.0), cdbs, groff, dpatch, autoconf, automake, libtool, libijs-dev, libjpeg62-dev
 Standards-Version: 3.7.2
 
